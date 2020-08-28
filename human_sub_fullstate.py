@@ -4,8 +4,11 @@ from collections import defaultdict
 
 import numpy as np
 
-
-
+class Action(Enum):
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3 
 
 
 """A class for substitute human guidance and prefernces
@@ -123,7 +126,7 @@ class HumanSubtitute():
         """Runs an episode with the Q values and returns a list
         of actions taken and the hidden reward achieved during the episode
         """
-        
+
         actions = []
         step, reward, _, obs = self.env.reset()
         state = obs['board'].tostring()
@@ -133,7 +136,7 @@ class HumanSubtitute():
             # print(self.q_values[state, 0], self.q_values[state, 1], self.q_values[state, 2], self.q_values[state, 3])
             # input()
             action = self.computeActionFromQ(state)
-            actions.append(action)
+            actions.append(Action(action))
             step, reward, _, obs = self.env.step(action)
             state = obs['board'].tostring()
         

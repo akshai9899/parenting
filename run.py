@@ -15,9 +15,9 @@ from human_sub import *
 
 import numpy as np
 
-# env = IslandNavigationEnvironment()
+env = IslandNavigationEnvironment()
 # env = AbsentSupervisorEnvironment()
-env = SafeInterruptibilityEnvironment()
+# env = SafeInterruptibilityEnvironment()
 
 # These environments are different and are yet to be solved by value iteration
 # env = SideEffectsSokobanEnvironment()
