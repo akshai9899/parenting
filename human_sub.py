@@ -180,7 +180,7 @@ class HumanSubtitute():
 
         while step != StepType.LAST:
             action = self.computeActionFromQ(*state)
-            actions.append(action)
+            actions.append(Action(action))
             step, reward, _, obs = self.env.step(action)
             state = self._findPos(obs)
         
