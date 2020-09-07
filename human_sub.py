@@ -15,7 +15,7 @@ Builds a Q value table of the environment with state as
 the position of the agent in the grid
 """
 class HumanSubtitute():
-    def __init__(self, env, iterations = 150, gamma = 1, epsilon = 0.05, alpha = 1.0):
+    def __init__(self, env, iterations = 150, gamma = 0.9, epsilon = 0.05, alpha = 1.0):
         """Initialisations of the Human Substitute object, computation 
         of the Q-values is done when the object is created
 
@@ -39,6 +39,14 @@ class HumanSubtitute():
         dim = env.observation_spec()['board'].shape
         dim = *dim, len(Action)
         return np.zeros(dim)
+
+    def getAdvantage(self ,state, action):
+        x, y = self._findPos(state)
+        return self.getQ(x, y, action) - self.getV(x, y)
+        
+    def getQState(self, state, action):
+        x, y = self._findPos(state)
+        return self.getQ(x, y, action)
 
     def getQ(self, x, y, action):
         """return the specified state and action's Q-value"""
@@ -82,8 +90,8 @@ class HumanSubtitute():
             # input()
 
             for t in range(len(states) - 1):
-                if states[t] == states[t+1]:
-                    continue
+                # if states[t] == states[t+1]:
+                    # continue
                 sx1, sy1 = states[t]
                 sx2, sy2 = states[t+1]
                 
