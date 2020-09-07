@@ -13,6 +13,7 @@ import math
 import torch
 
 
+"""THe Parenting algorithm Agent class"""
 
 
 
@@ -29,13 +30,13 @@ P_GUID = 0
 P_REC = 0.5
 P_PREF = 0.1
 P_TRAIN = 1
-
-
-
     
 
 
 class Agent():
+    """The Agent class contains all the working of the parenting algorithm
+    Updates and TODO : Add entropy, Add local Net
+    """
     def __init__(self, env, p_guid = P_GUID, p_rec = P_REC, p_pref = P_PREF, p_train = P_TRAIN, lr=1e-2):
         self.env = env
         self.p_guid = float(p_guid)
@@ -57,40 +58,51 @@ class Agent():
 
 
     def pre_training(self):
+        """Pre training for environments other than Island Navigation"""
         pass
     
     
     def try_update(self):
+        """Initiates the update based on probability given"""
         if self.p_train >= random.random():
             self.update()
 
     def update(self):
+        """The optimization loop for training the Net"""
+
         self.optimizer.zero_grad()
         loss = self.compute_loss()
         loss.backward()
         self.optimizer.step()
+
         if len(self.X[1]) % 35 == 0:
             print("loss:", loss)
-        # print(dict(self.net.named_parameters()))
+
         return loss
     
     def compute_loss(self):
+        """Binary Cross Entropy Loss function based on the Parenting algorithm"""
+ 
         state = torch.as_tensor(self.X[0], dtype=torch.float32).to(self.device)
         logits = Categorical(logits=self.net(state))
+
         act1 = torch.as_tensor(self.X[1], dtype=torch.long).to(self.device)
         act2 = torch.as_tensor(self.X[2], dtype=torch.long).to(self.device)
+
         act1 = logits.probs.gather(1,act1.view(-1,1))
         act2 = logits.probs.gather(1,act2.view(-1,1))
         p = torch.as_tensor(self.X[3], dtype=torch.float).to(self.device)
         sum = act1 + act2
+
         bce = nn.BCELoss()
         loss = bce((act1/sum).squeeze(1), p)
-        # loss = (p)*torch.log((act1)/sum) + (1-p)*torch.log((act2)/sum)
-        # loss = -loss.sum()
+
         return loss
 
 
     def train(self):
+        """Training loop : Can be optimized"""
+
         for i in range(self.epochs):
             batch_rets, batch_lens = self.run()
 
@@ -99,6 +111,8 @@ class Agent():
 
 
     def run(self):
+        """Main part of the Parenting algorithm"""
+
         step, reward, _, state = self.env.reset()
         batch_rets = []
         batch_lens = []
@@ -108,7 +122,6 @@ class Agent():
 
 
         while True:
-            # print(self._findPos(state))#--------------
 
             guidance = self.try_guidance(state)
 
@@ -127,17 +140,15 @@ class Agent():
             self.try_update()
 
             step, reward, _, state = extract
-
+            ep_ret += reward
+            ep_len += 1
             
-
-            # input()
             if step == StepType.LAST:
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
                 
                 ep_len = 0
                 ep_ret = 0
-                # print(np.sum(batch_lens))
 
                 step, reward, _, state = self.env.reset()
                 if len(self.X[1]) > self.batch_size:
@@ -145,40 +156,32 @@ class Agent():
 
 
 
-
-
-
     def familiarity(self, state):
-        # print("familiarity", self.query_count[state['board'].tostring()]) #--------------------------
+        """Computes the familiarity of a state based on the previous queries"""
         return self.query_count[state['board'].tostring()]
 
 
     def try_guidance(self, state):
+        """Initiates guidance step based on probability given"""
+
         prob = self.p_guid**self.familiarity(state)
 
         if prob >= random.random():
             action = self.get_guidance(state)
-            # print("action:", Action(action), action)
             extract = self.env.step(action)
             return extract
             
-
-
         return None
 
 
 
     def get_guidance(self, state):
-
-        # # print("guidance") #-------------------------------------------------------------
-        # x = [self.parent.getQ(*self._findPos(state), i) for i in range(4)]
-        # print(x)
-
-
+        """Queries the parent for the action after choosing two random action and adds 
+        the result to the memory X
+        """
         self.query_count[state['board'].tostring()] += 1
 
         self.X[0].append(self.change_state(state))
-
 
         while True:
             actions = np.random.choice(4, 2)
@@ -211,27 +214,22 @@ class Agent():
 
 
     def getAction(self, state):
+        """Computes an action based on the probabilities 
+        obatined by the trained network
+        """
         obs = self.change_state(state)
         obs = torch.as_tensor(obs, dtype=torch.float32).to(self.device)
         obs = obs.unsqueeze(0)
         obs = self.net(obs)
 
-
-
         p = Categorical(logits=obs.squeeze(0))
-        # print(dict(self.net.named_parameters()))
-        # print(p.probs)
-        # print(obs.squeeze(0))
-
         action = p.sample().item()
-            # print(obs)
-        
-        # input()
         
         return action
 
 
     def record(self, state):
+        """Recording of trajectories of len T = 1 as specified in the paper"""
 
         pos = state['board'].tostring()
         n = len(self.X[1]) % 2
@@ -249,12 +247,16 @@ class Agent():
 
 
     def try_recording(self, state):
+        """Initiates recording based on the given probability"""
+
         if self.p_rec >= random.random():
             return self.record(state)
         return None
 
 
     def try_prefernce(self):
+        """Human Prefernces part of the parenting algorithm"""
+
         if self.p_pref >= random.random():
             extract = self.preference()
         else:
@@ -272,7 +274,6 @@ class Agent():
 
 
         a, b = self.parent.getQState(s1[0], s1[1]), self.parent.getQState(s2[0], s2[1])
-        # print(s1[0] == s2[0].all()) #=========================================
         self.X[0].append(self.change_state(s1[0]))
         self.X[1].append(s1[1])
         self.X[2].append(s2[1])
@@ -292,6 +293,9 @@ class Agent():
 
 
     def preference(self):
+        """Searches for a recorded trajectory with same state and different
+        actions of exploitation and exploration recordings
+        """
         exploit, explore = self.recorded_clips[0], self.recorded_clips[1]
         
         for k, v in exploit.items():
@@ -335,7 +339,11 @@ class Agent():
         print("Hidden reward:", self.env._get_hidden_reward())
         print("actions:", actions)
 
+
     def change_state(self, state):
+        """Changes the board state to one hot encoding containing 
+        the objects in the environment
+        """
         state = state['board']
         s = state.shape
         s = self.objects, *s

@@ -26,6 +26,8 @@ def change_obs(state):
     return s
 
 class VPG():
+    """Vanilla Policy Gradients Implementation for the traditional RL Algorithm in Parenting"""
+
     def __init__(self, env, logits_net=None, lr=1e-2, epochs=50, batchsize=5000):
 
         if logits_net is None:
@@ -74,6 +76,7 @@ class VPG():
 
 
     def reward_to_go(self, rews):
+        """Computes reward from the current state to end of the episode for weights in loss function"""
         n = len(rews)
         rtgs = np.zeros_like(rews)
         for i in reversed(range(n)):
@@ -111,14 +114,12 @@ class VPG():
 
         # reset episode-specific variables
         step, reward, _, obs = self.env.reset()       # first obs comes from starting distribution
-            # signal from environment that episode is over
+
         ep_rews = []            # list for rewards accrued throughout ep
 
 
         # collect experience by acting in the environment with current policy
         while True:
-
-
 
             # save obs
             obs = change_obs(obs)

@@ -4,14 +4,18 @@ import torch.nn.functional as F
 
 from torch.optim import Adam, SGD
 
+"""The global CNN and Linear layers of the Network""" 
 
 class Net(nn.Module):
     def __init__(self, env):
+        """Builds the CNN's until the output reduces to 2x2"""
         super(Net, self).__init__()
 
+        # Shape of the input H x W x O (shape(H x W) x objects)
         objects = len(env._value_mapping)
         shape = env.observation_spec()['board'].shape
 
+        # Filter depths for the CNN
         filters =[objects] + [16, 32, 64, 64] 
         self.conv_layers = []
 
@@ -25,6 +29,7 @@ class Net(nn.Module):
               break
             
             else:
+              #Calculating the padding to be added to reduce it to 2x2 
               padx = 1 if shape[0] == 3 else (shape[0] == 2)*2
               pady = 1 if shape[1] == 3 else (shape[1] == 2)*2
 
@@ -49,6 +54,7 @@ class Net(nn.Module):
       return x
 
 
+"""The Global and Local layers of the Network"""
 class AgentNet(nn.Module):
     def __init__(self, env):
         super(AgentNet, self).__init__()
