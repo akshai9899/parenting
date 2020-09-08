@@ -155,7 +155,6 @@ class Agent():
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
                 
-                print(reward)
                 ep_len = 0
                 ep_ret = 0
 
