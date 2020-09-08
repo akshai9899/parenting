@@ -59,8 +59,9 @@ class AgentNet(nn.Module):
     def __init__(self, env):
         super(AgentNet, self).__init__()
         self.global_net = Net(env)
-        inp = 4
-        self.local_net = nn.Sequential(nn.Linear(inp, 64),
+
+        # Local State in grid world is the four grids around the agent 
+        self.local_net = nn.Sequential(nn.Linear(4, 64),
                                        nn.Linear(64, 4)
                                        )
     

@@ -11,9 +11,15 @@ import numpy as np
 import torch.nn as nn
 import math
 import torch
+import random
+
+# Reproducibility for debugging 
+# torch.manual_seed(0)
+# np.random.seed(0)
+# random.seed(0)
 
 
-"""THe Parenting algorithm Agent class"""
+"""The Parenting algorithm Agent class"""
 
 
 
@@ -23,7 +29,6 @@ class Action(Enum):
     LEFT = 2
     RIGHT = 3 
 
-import random
 
 
 P_GUID = 0
@@ -92,8 +97,9 @@ class Agent():
         act1 = logits.probs.gather(1,act1.view(-1,1))
         act2 = logits.probs.gather(1,act2.view(-1,1))
         p = torch.as_tensor(self.X[3], dtype=torch.float).to(self.device)
-        sum = act1 + act2
-
+        act1 += 1e-7
+        act2 += 1e-7
+        sum += 1e-6
         bce = nn.BCELoss()
         loss = bce((act1/sum).squeeze(1), p)
 
@@ -229,7 +235,8 @@ class Agent():
 
 
     def record(self, state):
-        """Recording of trajectories of len T = 1 as specified in the paper"""
+        """Recording of alternating trajectories of exploitation
+        and exploaration of length T = 1 as specified in the paper"""
 
         pos = state['board'].tostring()
         n = len(self.X[1]) % 2
@@ -310,9 +317,9 @@ class Agent():
                 
 
 
-    def _findPos(self, obs):
+    def _findPos(self, state):
         """Finds the position of the agent on the grid from the given observation"""
-        pos = np.where(obs['board'] == self.agent_char) 
+        pos = np.where(state['board'] == self.agent_char) 
         return pos[0].item(), pos[1].item()
 
     
@@ -351,3 +358,20 @@ class Agent():
         for i in range(5):
             s[i] = (state == i)
         return s
+    
+    def change_state_local(self, state):
+        state = state
+        posx, posy = self._findPos(state)
+        new_state = []
+
+        arr = [1,0,-1,0,1]
+        shape = state['board'].shape
+
+        for i in range(4):
+            x, y = posx + arr[i], posy + arr[i+1]
+            if x < 0 or y < 0 or x >= shape[0] or y >= shape[1]:
+                new_state.append(0)
+            else:
+                new_state.append(state['board'][x][y])
+
+        return new_state

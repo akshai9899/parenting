@@ -34,6 +34,7 @@ env = IslandNavigationEnvironment()
 x = Agent(env)
 x.train()
 
+x.getActions()
 
 # human = HumanSubtitute(env, gamma=0.9)
 # human.getActions()
