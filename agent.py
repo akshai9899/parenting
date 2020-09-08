@@ -54,12 +54,12 @@ class Agent():
         self.query_count = defaultdict(int)
         # self.net = AgentNet(env)
         self.net = Net(env)
-        self.net.to(device)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.net.to(self.device)
         self.objects = len(self.env._value_mapping)
         self.getAgentChar()
         self.batch_size = 500
         self.epochs = 1
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.optimizer = Adam(self.net.parameters(), lr=lr)
 
 
@@ -98,6 +98,7 @@ class Agent():
         act1 = logits.probs.gather(1,act1.view(-1,1))
         act2 = logits.probs.gather(1,act2.view(-1,1))
         p = torch.as_tensor(self.X[3], dtype=torch.float).to(self.device)
+        sum = act1 + act2
         act1 += 1e-7
         act2 += 1e-7
         sum += 1e-6
@@ -113,8 +114,8 @@ class Agent():
         for i in range(self.epochs):
             batch_rets, batch_lens = self.run()
 
-            print('epoch: %3d \t return: %.3f \t ep_len: %.3f'%
-                    (i, np.mean(batch_rets), np.mean(batch_lens)))
+            # print('epoch: %3d \t return: %.3f \t ep_len: %.3f'%
+            #         (i, np.mean(batch_rets), np.mean(batch_lens)))
 
 
     def run(self):
@@ -154,6 +155,7 @@ class Agent():
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
                 
+                print(reward)
                 ep_len = 0
                 ep_ret = 0
 
