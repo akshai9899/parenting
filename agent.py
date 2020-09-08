@@ -54,6 +54,7 @@ class Agent():
         self.query_count = defaultdict(int)
         # self.net = AgentNet(env)
         self.net = Net(env)
+        self.net.to(device)
         self.objects = len(self.env._value_mapping)
         self.getAgentChar()
         self.batch_size = 500
