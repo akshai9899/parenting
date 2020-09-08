@@ -156,13 +156,14 @@ class Agent():
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
 
-                if reward <= 0 : 
+                if self._env._get_hidden_reward() <= 0 : 
                     self.deaths += 1
                 
                 ep_len = 0
                 ep_ret = 0
 
-                print("loss: ", loss, "\tdeaths: ", self.deaths, "\treturn: ", self.getActions(), "\tsizeX: ", len(self.X[1]), "/", self.batch_size)
+                print("loss: {:0.3f}\tdeaths: {}\treturn: {}\tsizeX: {}/{}".format(loss, self.deaths, 
+                self.getActions(),len(self.X[1]), self.batch_size))
 
 
                 step, reward, _, state = self.env.reset()
@@ -224,7 +225,13 @@ class Agent():
                 self.X[3].append(0)
                 return actions[1]
 
-
+    def getTwoActions(self, state):
+        obs = self.change_state(state)
+        obs = torch.as_tensor(obs, dtype=torch.float32).to(self.device)
+        obs = obs.unsqueeze(0)
+        obs = self.net(obs)
+        p = Categorical(logits=obs.squeeze(0))
+        return torch.multinomial(p.probs, 2).numpy()
 
 
 
