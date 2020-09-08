@@ -35,14 +35,14 @@ P_GUID = 0
 P_REC = 0.5
 P_PREF = 0.1
 P_TRAIN = 1
-    
+BATCH_SIZE = 500    
 
 
 class Agent():
     """The Agent class contains all the working of the parenting algorithm
     Updates and TODO : Add entropy, Add local Net
     """
-    def __init__(self, env, p_guid = P_GUID, p_rec = P_REC, p_pref = P_PREF, p_train = P_TRAIN, lr=1e-2):
+    def __init__(self, env, sizeX = BATCH_SIZE, p_guid = P_GUID, p_rec = P_REC, p_pref = P_PREF, p_train = P_TRAIN, lr=1e-2):
         self.env = env
         self.p_guid = float(p_guid)
         self.p_rec = float(p_rec)
@@ -58,7 +58,7 @@ class Agent():
         self.net.to(self.device)
         self.objects = len(self.env._value_mapping)
         self.getAgentChar()
-        self.batch_size = 500
+        self.batch_size = sizeX
         # self.epochs = 1
         self.optimizer = Adam(self.net.parameters(), lr=lr)
         self.deaths = 0
@@ -156,7 +156,7 @@ class Agent():
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
 
-                if self._env._get_hidden_reward() <= 0 : 
+                if self.env._get_hidden_reward() <= 0 : 
                     self.deaths += 1
                 
                 ep_len = 0
