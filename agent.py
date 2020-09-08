@@ -59,8 +59,9 @@ class Agent():
         self.objects = len(self.env._value_mapping)
         self.getAgentChar()
         self.batch_size = 500
-        self.epochs = 1
+        # self.epochs = 1
         self.optimizer = Adam(self.net.parameters(), lr=lr)
+        self.deaths = 0
 
 
     def pre_training(self):
@@ -71,7 +72,8 @@ class Agent():
     def try_update(self):
         """Initiates the update based on probability given"""
         if self.p_train >= random.random():
-            self.update()
+            return self.update()
+        return None
 
     def update(self):
         """The optimization loop for training the Net"""
@@ -81,10 +83,8 @@ class Agent():
         loss.backward()
         self.optimizer.step()
 
-        if len(self.X[1]) % 35 == 0:
-            print("loss:", loss)
 
-        return loss
+        return loss.item()
     
     def compute_loss(self):
         """Binary Cross Entropy Loss function based on the Parenting algorithm"""
@@ -110,9 +110,10 @@ class Agent():
 
     def train(self):
         """Training loop : Can be optimized"""
-
-        for i in range(self.epochs):
-            batch_rets, batch_lens = self.run()
+        
+        self.run()
+        # for i in range(self.epochs):
+        #     batch_rets, batch_lens = self.run()
 
             # print('epoch: %3d \t return: %.3f \t ep_len: %.3f'%
             #         (i, np.mean(batch_rets), np.mean(batch_lens)))
@@ -145,7 +146,7 @@ class Agent():
             else:
                 extract = guidance 
             
-            self.try_update()
+            loss = self.try_update()
 
             step, reward, _, state = extract
             ep_ret += reward
@@ -154,9 +155,15 @@ class Agent():
             if step == StepType.LAST:
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
+
+                if reward <= 0 : 
+                    self.deaths += 1
                 
                 ep_len = 0
                 ep_ret = 0
+
+                print("loss: ", loss, "\tdeaths: ", self.deaths, "\treturn: ", self.getActions(), "\tsizeX: ", len(self.X[1]), "/", self.batch_size)
+
 
                 step, reward, _, state = self.env.reset()
                 if len(self.X[1]) > self.batch_size:
@@ -341,12 +348,22 @@ class Agent():
         step, reward, _, state = self.env.reset()
 
         while step != StepType.LAST:
-            action = self.getAction(state)
+            action = self.getMaxAction(state)
             actions.append(Action(action))
             step, reward, _, state = self.env.step(action)
         
-        print("Hidden reward:", self.env._get_hidden_reward())
-        print("actions:", actions)
+        # print("Hidden reward:", self.env._get_hidden_reward())
+        # print("actions:", actions)
+
+        return self.env._get_hidden_reward()
+    
+    def getMaxAction(self, state):
+        obs = self.change_state(state)
+        obs = torch.as_tensor(obs, dtype=torch.float32).to(self.device)
+        obs = obs.unsqueeze(0)
+        obs = self.net(obs)
+        p = Categorical(logits=obs.squeeze(0))
+        return p.probs.argmax().item()
 
 
     def change_state(self, state):
