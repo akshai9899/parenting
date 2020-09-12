@@ -200,7 +200,7 @@ class Agent():
         self.X[0].append(self.change_state(state))
 
         while True:
-            actions = np.random.choice(4, 2)
+            actions = np.random.choice(4, 2, replace=False)
             a = self.parent.getAdvantage(state, actions[0])
             b = self.parent.getAdvantage(state, actions[1])
 
@@ -213,13 +213,13 @@ class Agent():
                 self.X[3].append(0.5) 
                 return actions[0]
 
-            elif abs(v-a) < 0.05*v:
+            elif abs(a) < 0.05*v:
                 self.X[1].append(actions[0])
                 self.X[2].append(actions[1])    
                 self.X[3].append(1)
                 return actions[0]
 
-            elif abs(v-b) < 0.05*v:
+            elif abs(b) < 0.05*v:
                 self.X[1].append(actions[0])
                 self.X[2].append(actions[1])    
                 self.X[3].append(0)
